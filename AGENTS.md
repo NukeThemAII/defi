@@ -1,25 +1,28 @@
-# AGENTS.md — DeFi Yield Dashboard Agent
+# AGENTS.md — DeFi Yield Dashboard Agent (Next.js 15.x)
 
 ## 🧠 Agent Purpose
 
-This agent builds and maintains a **DeFi Yield Dashboard** that monitors live APY, TVL, and wallet performance for:
+Build and maintain a **DeFi Yield Dashboard** that monitors live APY, TVL, and wallet performance for:
 
 * **Gauntlet USD Alpha (Base)**
 * **Superlend USDC SuperFund (Base)**
 
-It fetches data from **Vaults.fyi** (official SDK + API), tracks on-chain balances via **Base network RPC**, and visualizes blended APY, daily/weekly/monthly USDC earnings, and vault metrics. It supports **WalletConnect (RainbowKit)** for read-only wallet connection and snapshot history.
+The app fetches data from **Vaults.fyi** (official SDK/API), reads on‑chain balances via **Base** RPC, and visualizes blended APY, daily/weekly/monthly USDC earnings, and vault metrics. It supports **WalletConnect (RainbowKit)** for read‑only wallet connection and snapshot history.
+
+> **Version policy:** Use the **latest stable releases** only. For the web app scaffold, run `npx create-next-app@latest` (currently Next.js **15.x**). If a newer **stable** major is released, prefer that. Do **not** use beta/rc unless explicitly requested.
 
 ---
 
 ## 🎯 Agent Objectives
 
 1. Integrate **Vaults.fyi API/SDK** to pull live vault data (APY 1d/7d/30d, TVL, allocations, historical series).
-2. Read on-chain balances (ERC20 & ERC4626) for wallet: `0x765B9b4D853427123e6eb1Af73Cb6c22D4dcfFd7`.
-3. Compute blended APY and USDC earnings projections (daily/monthly/yearly).
+2. Read on‑chain balances (ERC‑20 & ERC‑4626) for wallet: `0x765B9b4D853427123e6eb1Af73Cb6c22D4dcfFd7`.
+3. Compute blended APY and USDC earnings projections (daily/monthly/yearly) with optional weekly compounding.
 4. Present data via a **Next.js (TypeScript)** web dashboard using **Tailwind + shadcn/ui + Recharts**.
-5. Provide **WalletConnect** integration (RainbowKit) for optional real-time wallet read.
-6. Store historical snapshots via Prisma ORM (SQLite or Postgres).
-7. Deploy on **AlmaLinux VPS** with **Node 20+, PM2, Nginx, SSL (certbot)**.
+5. Provide **WalletConnect** integration (RainbowKit) for optional real‑time wallet read.
+6. Store historical snapshots via Prisma ORM (SQLite by default; Postgres ready).
+7. Deploy on **AlmaLinux VPS** with **Node 20+**, **PM2**, **Nginx**, **certbot**.
+8. Keep a persistent **WORK_LOG.md** documenting progress, design decisions, tasks, and bugs for continuity across sessions.
 
 ---
 
@@ -27,15 +30,15 @@ It fetches data from **Vaults.fyi** (official SDK + API), tracks on-chain balanc
 
 * **Vaults API Integration**
 
-  * Endpoint: `GET /v1/detailed/vaults`, `GET /v1/vaults/{network}/{address}`
+  * Endpoints: `GET /v1/detailed/vaults`, `GET /v1/vaults/{network}/{address}`
   * SDK: `@vaultsfyi/sdk` (typed client)
-  * Fields: APY (1d/7d/30d), TVL, allocations, historical data.
+  * Fields: APY (1d/7d/30d), TVL, allocations, historical data
 
-* **On-Chain Balance Tracking (Base)**
+* **On‑Chain Balance Tracking (Base)**
 
-  * Provider: Alchemy or direct RPC `https://mainnet.base.org`
-  * Queries: ERC20 `balanceOf`, ERC4626 `convertToAssets`
-  * Optional BaseScan API for transaction history.
+  * Provider: **Alchemy** (recommended) or direct RPC `https://mainnet.base.org`
+  * Queries: ERC‑20 `balanceOf`, `decimals`; ERC‑4626 `convertToAssets`, `asset`
+  * Optional BaseScan/Etherscan‑style API for transfers & events
 
 * **UI Components**
 
@@ -48,25 +51,30 @@ It fetches data from **Vaults.fyi** (official SDK + API), tracks on-chain balanc
 * **Wallet Integration**
 
   * RainbowKit + wagmi + WalletConnect
-  * Read-only; no private key access
+  * Read‑only; no private key access
 
 * **Backend**
 
-  * Next.js API routes or Express server
+  * Next.js API routes (App Router) with edge‑safe handlers where possible
   * Prisma + SQLite (default)
   * Periodic refresh jobs (cron or PM2 schedule)
 
 ---
 
-## ⚙️ Technical Stack
+## ⚙️ Technical Stack (latest stable)
 
-* **Frontend:** Next.js 14 (TypeScript, App Router)
-* **Backend:** Node 20, Prisma ORM
-* **UI:** Tailwind CSS + shadcn/ui + Recharts
-* **API:** @vaultsfyi/sdk + ethers.js
-* **DB:** SQLite / Postgres (configurable)
-* **Wallet:** wagmi + RainbowKit
-* **Deploy:** AlmaLinux, PM2, Nginx
+* **Frontend:** Next.js **15.x** (App Router) + TypeScript
+* **UI:** Tailwind CSS + shadcn/ui + Lucide icons
+* **Charts:** Recharts
+* **State/Data:** React Query (TanStack Query) where helpful
+* **Backend:** Next.js API routes, Node 20+
+* **ORM/DB:** Prisma ORM with SQLite (default) / Postgres (optional)
+* **Web3:** ethers v6, wagmi v2, RainbowKit (latest)
+* **Providers:** Alchemy (Base) + fallback to public Base RPC
+* **Third‑party:** `@vaultsfyi/sdk` for Vaults.fyi
+* **Deploy:** AlmaLinux, PM2, Nginx, certbot
+
+> **Templates:** You may start from a Vercel Next.js template if it does not conflict with requirements ([https://vercel.com/templates/next.js](https://vercel.com/templates/next.js)). If a template is used, document which and why in `WORK_LOG.md` and adapt to our stack.
 
 ---
 
@@ -74,6 +82,7 @@ It fetches data from **Vaults.fyi** (official SDK + API), tracks on-chain balanc
 
 ```prisma
 datasource db { provider = "sqlite"; url = env("DATABASE_URL") }
+
 generator client { provider = "prisma-client-js" }
 
 model Platform {
@@ -105,139 +114,211 @@ model Snapshot {
 
 ## 🔌 API Endpoints
 
-| Route                          | Method | Description                              |
-| :----------------------------- | :----- | :--------------------------------------- |
-| `/api/vaults`                  | GET    | Fetch all vaults from Vaults.fyi         |
-| `/api/vault/:network/:address` | GET    | Fetch detailed vault info                |
-| `/api/wallet/:address`         | GET    | On-chain wallet balances                 |
-| `/api/snapshots`               | POST   | Add manual snapshot                      |
-| `/api/summary`                 | GET    | Return blended APY + earnings projection |
+| Route                            | Method | Description                                         |
+| :------------------------------- | :----- | :-------------------------------------------------- |
+| `/api/vaults`                    | GET    | Fetch vaults from Vaults.fyi (Gauntlet + Superlend) |
+| `/api/vault/[network]/[address]` | GET    | Detailed vault info + historical series             |
+| `/api/wallet/[address]`          | GET    | On‑chain wallet balances & vault share value        |
+| `/api/snapshots`                 | POST   | Add manual snapshot (zod‑validated)                 |
+| `/api/summary`                   | GET    | Blended APY & earnings projections                  |
+| `/api/alerts`                    | GET    | Threshold alerts (computed server‑side)             |
 
 ---
 
-## 🧮 Example Code
+## 🧮 Calculations
 
-```ts
-import { VaultsClient } from '@vaultsfyi/sdk';
-import { ethers } from 'ethers';
-
-const vaults = new VaultsClient({ apiKey: process.env.VAULTSFYI_API_KEY });
-const provider = new ethers.providers.AlchemyProvider('base', process.env.ALCHEMY_API_KEY);
-
-// Example: Get vault data
-const gauntlet = await vaults.getVault({ network: 'base', vaultAddress: '0x000000000001CdB57E58Fa75Fe420a0f4D6640D5' });
-
-// Example: Get wallet balance
-const erc20Abi = ['function balanceOf(address) view returns (uint256)', 'function decimals() view returns (uint8)'];
-const usdc = new ethers.Contract('0x...', erc20Abi, provider);
-const bal = await usdc.balanceOf('0x765B9b4D853427123e6eb1Af73Cb6c22D4dcfFd7');
-```
+* **Daily earnings** = `balanceUsd * (apy1d / 100) / 365`
+* **Blended APY** = `Σ(weight_i * apy1d_i)` where `weight_i = balance_i / total_balance`
+* **Projections**: daily/30d/90d/365d; **weekly compounding toggle** (compound every 7 days)
 
 ---
 
-## 🚀 Deployment Steps (AlmaLinux)
+## 🧪 Tests
 
-1. Install Node.js 20, pnpm, PM2, Nginx, Certbot.
-2. Clone repo → `pnpm i` → `pnpm build`.
-3. Run migrations: `pnpm prisma migrate deploy`.
-4. Start: `pm2 start pnpm --name defi-tracker -- start`.
-5. Configure Nginx reverse proxy (port 3000 → HTTPS).
-6. Set cron (or PM2 schedule) for hourly vault refresh.
+* Unit tests (Vitest) for math: blended APY, daily earnings, projections
+* Smoke tests for `/api/vaults` & `/api/summary`
 
 ---
 
 ## 🧰 .env.example
 
 ```
-VAULTSFYI_API_KEY=your_api_key_here
-ALCHEMY_API_KEY=your_alchemy_key_here
+# third‑party
+VAULTSFYI_API_KEY=
+ALCHEMY_API_KEY=
+# database
 DATABASE_URL=file:./dev.db
+# alerts
 THRESHOLD_APY_DELTA=0.5
 THRESHOLD_TVL_DROP=5
+# ui
 TZ_DISPLAY=Asia/Bangkok
+DEFAULT_WALLET=0x765B9b4D853427123e6eb1Af73Cb6c22D4dcfFd7
 ```
+
+---
+
+## 🚀 Deployment (AlmaLinux, latest stable)
+
+1. Install Node.js 20+, pnpm, PM2, Nginx, certbot.
+2. `npx create-next-app@latest` → incorporate code, libs, and pages per this spec.
+3. `pnpm i` → `pnpm prisma migrate deploy` → `pnpm build`.
+4. Run with PM2: `pm2 start pnpm --name defi-tracker -- start`.
+5. Nginx reverse proxy to port 3000; enable HTTPS with certbot.
+6. Add PM2 cron (or `node-cron`) for hourly refresh tasks.
 
 ---
 
 ## ✅ Acceptance Criteria
 
-* [ ] Displays live APY/TVL from Vaults.fyi for Gauntlet & Superlend.
-* [ ] Tracks wallet balance & computes blended APY.
-* [ ] Updates data hourly.
-* [ ] Allows manual snapshot entry/export.
-* [ ] Deploys successfully on AlmaLinux with PM2.
-* [ ] Stores no private keys.
+* Displays **live APY/TVL** from Vaults.fyi for Gauntlet & Superlend
+* Reads wallet balances (Base) & computes **blended APY**
+* Hourly refresh with **alert evaluation** (APY Δ≥0.5%, TVL drop ≥5%)
+* Manual snapshots + CSV export; charts over time
+* Deployed on AlmaLinux; no private keys stored; client never sees server API keys
+* `WORK_LOG.md` maintained each session (done/next/bugs/decisions)
 
 ---
 
-# README.md
+## 🔐 Security
 
-## DeFi Yield Dashboard — Gauntlet & Superlend
+* Read‑only wallet access; never request seed phrases or private keys
+* Keep secrets server‑side; never expose in client bundle
+* Implement request throttling and caching on API calls
 
-This project tracks real-time DeFi yield performance for **Gauntlet USD Alpha** and **Superlend USDC SuperFund** on Base network. It aggregates data from **Vaults.fyi** and on-chain sources, calculating blended APY, projected USDC earnings, and vault risk exposure.
+---
 
-### ✨ Features
+## 🗂 Milestones (up‑to‑date)
 
-* Live APY & TVL via Vaults.fyi API/SDK
-* Real-time wallet tracking (via WalletConnect or address)
-* Blended APY calculator
-* Snapshot history with CSV export
-* Deployment-ready for AlmaLinux VPS
+**M1 — Scaffold (Next 15.x)**
 
-### ⚙️ Stack
+* Create app via `npx create-next-app@latest` (TS, App Router)
+* Add Tailwind, shadcn/ui, Recharts, Prisma
+* Add `AGENTS.md`, `README.md`, `WORK_LOG.md`, `.env.example`
 
-* Next.js 14 + TypeScript + Tailwind + shadcn/ui
-* Prisma ORM (SQLite/Postgres)
-* Ethers.js + Vaults.fyi SDK
-* RainbowKit + wagmi for WalletConnect
+**M2 — Data Layer**
 
-### 📦 Setup
+* `src/lib/vaults.ts`: wrap `@vaultsfyi/sdk` with caching
+* `src/lib/onchain.ts`: ethers v6 + Alchemy provider; Base RPC fallback
+
+**M3 — Prisma & API**
+
+* Prisma models exactly as above; migrations
+* API: `/api/vaults`, `/api/vault/[network]/[address]`, `/api/wallet/[address]`, `/api/snapshots`, `/api/summary`, `/api/alerts`
+
+**M4 — UI**
+
+* Pages: `/`, `/charts`, `/snapshots`, `/settings`
+* Components: `VaultCard`, `SummaryCard`, `ChartPanel`, `SnapshotForm`
+* WalletConnect via RainbowKit (read‑only)
+
+**M5 — Jobs & Alerts**
+
+* Hourly refresh (PM2 cron or node‑cron)
+* Alert evaluation & exposure via `/api/alerts`
+
+**M6 — Deploy**
+
+* `docs/DEPLOY_ALMALINUX.md` with PM2, Nginx, certbot
+
+---
+
+# README.md — DeFi Yield Dashboard (Next.js 15.x)
+
+A production‑ready dashboard tracking **Gauntlet USD Alpha** and **Superlend USDC SuperFund** (Base). It pulls live APY/TVL from **Vaults.fyi**, reads on‑chain balances, computes **blended APY** and **earnings projections**, and supports **WalletConnect**.
+
+## ✨ Features
+
+* Live **APY (1d/7d/30d)** & **TVL** via Vaults.fyi SDK/API
+* On‑chain wallet tracking (Base) — ERC‑20 & ERC‑4626 read‑only
+* Blended APY & earnings/day/month/year with optional weekly compounding
+* Snapshot history + CSV export; Charts for APY/TVL/earnings
+* Alerts: APY Δ≥0.5% or TVL drop ≥5%
+* Deployable on AlmaLinux with PM2 + Nginx + SSL
+
+## 🧰 Stack (latest stable)
+
+* Next.js **15.x** (TypeScript, App Router)
+* Tailwind + shadcn/ui + Lucide + Recharts
+* Prisma ORM (SQLite default / Postgres optional)
+* ethers v6 + wagmi v2 + RainbowKit (WalletConnect)
+* `@vaultsfyi/sdk` + Alchemy (Base)
+
+## 🚀 Quickstart
 
 ```bash
-git clone https://github.com/youruser/defi-yield-dashboard.git
+# 1) scaffold (latest stable)
+npx create-next-app@latest defi-yield-dashboard
 cd defi-yield-dashboard
-pnpm install
-cp .env.example .env
-# add your API keys
+
+# 2) install deps
+pnpm add @vaultsfyi/sdk ethers @tanstack/react-query recharts \
+  @prisma/client prisma tailwindcss postcss autoprefixer \
+  class-variance-authority clsx lucide-react \
+  wagmi @rainbow-me/rainbowkit viem
+
+# 3) init prisma
+echo 'DATABASE_URL="file:./dev.db"' >> .env
+pnpm prisma init --datasource-provider sqlite
+
+# 4) apply schema (paste Prisma models, then)
+pnpm prisma migrate dev --name init
+
+# 5) dev
 pnpm dev
 ```
 
-### 🚀 Deployment
+## 🔧 Configuration
 
-```bash
-pnpm build
-pm2 start pnpm --name defi-tracker -- start
-sudo certbot --nginx -d your.domain.com
-```
+* Copy `.env.example` → `.env` and set:
 
-### 🧠 Data Sources
+  * `VAULTSFYI_API_KEY`, `ALCHEMY_API_KEY`, `DATABASE_URL`
+  * `THRESHOLD_APY_DELTA`, `THRESHOLD_TVL_DROP`, `TZ_DISPLAY`
+  * `DEFAULT_WALLET=0x765B9b4D853427123e6eb1Af73Cb6c22D4dcfFd7`
 
-* [Vaults.fyi API](https://vaults.fyi)
-* [Gauntlet USD Alpha Vault (Base)](https://app.vaults.fyi/opportunity/base/0x000000000001CdB57E58Fa75Fe420a0f4D6640D5)
-* [Superlend USDC SuperFund](https://app.superlend.xyz)
+## 📡 Data Sources
 
-### 🔒 Security
+* Vaults.fyi API/SDK (vault metrics & history)
+* Base RPC / Alchemy for on‑chain reads (ERC‑20, ERC‑4626)
 
-* Read-only wallet access (no private keys)
-* Environment variables stored securely
-* HTTPS enforced via Nginx + Certbot
+## 📈 Pages
 
-### 👤 Maintainer
+* `/` Dashboard — blended APY, per‑vault cards, earnings/day
+* `/charts` — APY/TVL/earnings charts (1d/7d/30d ranges)
+* `/snapshots` — history table + CSV export/import
+* `/settings` — alert thresholds, timezone
 
-Agent maintains vault fetch tasks, snapshot integrity, and daily reports.
+## 🔔 Alerts
 
----
+* Server job (hourly) pulls latest data and computes deltas.
+* If APY change ≥ 0.5% or TVL drop ≥ 5%, expose an alert in `/api/alerts` and surface a badge in UI.
 
-### 🪄 Example Usage
+## 🔒 Security
 
-* **View dashboard:** `/` (shows blended APY & charts)
-* **Add snapshot:** `/snapshots/new`
-* **Connect wallet:** Click “Connect Wallet” → Rainbow → auto-fetch balances.
+* Read‑only wallet interactions. **Never** request seeds/keys.
+* Keep API keys server‑side; do not leak to client bundle.
 
----
+## 📦 Deploy (AlmaLinux)
 
-**License:** MIT
+* Build: `pnpm build`
+* Run: `pm2 start pnpm --name defi-tracker -- start`
+* Nginx reverse proxy to port 3000; HTTPS via certbot
+* Optional hourly refresh with PM2 cron or node‑cron
 
----
+## 🧪 Testing
 
-> ⚠️ This dashboard is for monitoring only. Never share private keys or seed phrases. All API and wallet data are read-only.
+* Vitest unit tests for calculations; smoke tests for `/api/vaults` & `/api/summary`
+
+## 📝 Work Log
+
+Maintain `WORK_LOG.md` each session:
+
+* Done / Next / Bugs / Decisions / Open Questions
+
+## 📎 Templates (optional)
+
+You may start from a Vercel Next.js template ([https://vercel.com/templates/next.js](https://vercel.com/templates/next.js)) that matches this stack. If you do, record the choice and modifications in `WORK_LOG.md`.
+
+## License
+
+MIT
