@@ -30,6 +30,32 @@ const GRANULARITY_OPTIONS: Array<{
   { label: 'Weekly', granularity: '1week', apyInterval: '7day' },
 ];
 
+const DATE_TICK_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+});
+
+const toNumber = (value: unknown): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
+
+const formatDateTick = (value: string | number) =>
+  DATE_TICK_FORMATTER.format(new Date(toNumber(value)));
+
+const formatApyTick = (value: string | number) => `${toNumber(value).toFixed(1)}%`;
+
+const formatTooltipValue = (value: unknown, formatter: (num: number) => string) => {
+  const numeric = toNumber(value);
+  return formatter(numeric);
+};
+
 interface ChartDatum {
   timestamp: number;
   apy: number;
@@ -121,7 +147,7 @@ export default function ChartsPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {charts.map(({ vault, history, chartData, query }) => (
+        {charts.map(({ vault, chartData, query }) => (
           <Card key={vault.key}>
             <CardHeader>
               <CardTitle>{vault.name}</CardTitle>
@@ -154,16 +180,16 @@ export default function ChartsPage() {
                         <CartesianGrid stroke="hsl(var(--muted))" strokeOpacity={0.2} vertical={false} />
                         <XAxis
                           dataKey="timestamp"
-                          tickFormatter={(value) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(value)}
+                          tickFormatter={formatDateTick}
                           stroke="hsl(var(--muted-foreground))"
                         />
                         <YAxis
-                          tickFormatter={(value) => `${value.toFixed(1)}%`}
+                          tickFormatter={formatApyTick}
                           stroke="hsl(var(--muted-foreground))"
                         />
                         <RechartsTooltip
-                          formatter={(value: number) => formatPercent(value)}
-                          labelFormatter={(value: number) => formatDateTime(value)}
+                          formatter={(value) => formatTooltipValue(value, (num) => formatPercent(num))}
+                          labelFormatter={(value) => formatDateTime(toNumber(value as string | number))}
                         />
                         <Area
                           type="monotone"
@@ -183,16 +209,16 @@ export default function ChartsPage() {
                         <CartesianGrid stroke="hsl(var(--muted))" strokeOpacity={0.2} vertical={false} />
                         <XAxis
                           dataKey="timestamp"
-                          tickFormatter={(value) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(value)}
+                          tickFormatter={formatDateTick}
                           stroke="hsl(var(--muted-foreground))"
                         />
                         <YAxis
-                          tickFormatter={(value) => formatCurrency(value, { compact: true })}
+                          tickFormatter={(value) => formatCurrency(toNumber(value), { compact: true })}
                           stroke="hsl(var(--muted-foreground))"
                         />
                         <RechartsTooltip
-                          formatter={(value: number) => formatCurrency(value)}
-                          labelFormatter={(value: number) => formatDateTime(value)}
+                          formatter={(value) => formatTooltipValue(value, (num) => formatCurrency(num))}
+                          labelFormatter={(value) => formatDateTime(toNumber(value as string | number))}
                         />
                         <Line
                           type="monotone"

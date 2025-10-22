@@ -1,14 +1,21 @@
 import { startVitest } from "vitest/node";
 
 async function main() {
-  const vitest = await startVitest("test", [], {
-    run: true,
-    reporters: process.env.CI ? "default" : "basic",
-  });
+  try {
+    const vitest = await startVitest("test", [], {
+      run: true,
+      reporters: [["default", { summary: false }]],
+    });
 
-  const exitCode = await vitest?.close();
-  if (typeof exitCode === "number" && exitCode > 0) {
-    process.exit(exitCode);
+    await vitest?.start();
+    const exitCode = await vitest?.close();
+
+    if (exitCode && exitCode > 0) {
+      process.exit(exitCode);
+    }
+  } catch (error) {
+    console.error("Vitest execution failed:\n", error);
+    process.exit(1);
   }
 }
 
