@@ -34,3 +34,10 @@
 **Findings / Decisions:** Default persistence ensures summary calls and the worker both enrich historical data with consistent logic; cron script designed for PM2/standalone usage.
 **Bugs / Blockers:** None.
 **Next Steps:** Expose refresh status in UI, wire React Query hooks for the new APIs, and plan alert delivery (email/webhook) pipeline.
+
+## Session 2025-10-22 17:10
+**Goal:** Deliver dashboard UI backed by React Query and expose snapshots in the front-end.
+**Done:** Added global QueryProvider, navigation shell, and shadcn/ui cards; wired `/` dashboard to React Query summary hook (refresh button, projections, vault cards), implemented snapshots page with filtering, and added placeholder charts/settings views. Introduced formatting utilities and documented UI/refresh workflows in README. Updated TypeScript paths + Query hooks for summary/snapshots.
+**Findings / Decisions:** Client pages default to server-provided `DEFAULT_WALLET`, with refresh toggles persisting snapshots automatically; summary refetches double as manual snapshot triggers. UI keeps dependencies light by leaning on shadcn-generated primitives.
+**Bugs / Blockers:** pnpm catalog access is flaky (EAI_AGAIN); scripts using `tsx` or lint/test binaries require existing installs. No functional blockers in app code.
+**Next Steps:** Build charts visualization (Recharts) using historical data, flesh out settings to control thresholds, and prepare production-ready hydration (loading states for Real-time data).

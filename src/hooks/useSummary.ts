@@ -74,7 +74,9 @@ export function useSummary(wallet?: string, options?: { enabled?: boolean }): Us
       if (wallet) {
         params.set("wallet", wallet);
       }
-      const response = await fetch(`/api/summary?${params.toString()}`);
+      const response = await fetch(`/api/summary?${params.toString()}`, {
+        cache: "no-store",
+      });
       if (!response.ok) {
         throw new Error("Failed to load summary");
       }

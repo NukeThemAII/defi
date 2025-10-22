@@ -230,10 +230,11 @@ A production‑ready dashboard tracking **Gauntlet USD Alpha** and **Superlend U
 ## ✨ Features
 
 * Live **APY (1d/7d/30d)** & **TVL** via Vaults.fyi SDK/API
-* On‑chain wallet tracking (Base) — ERC‑20 & ERC‑4626 read‑only
+* On-chain wallet tracking (Base) — ERC-20 & ERC-4626 read-only
 * Blended APY & earnings/day/month/year with optional weekly compounding
 * Snapshot history + CSV export; Charts for APY/TVL/earnings
 * Alerts: APY Δ≥0.5% or TVL drop ≥5%
+* React Query-powered dashboard UI with shadcn/ui components
 * Deployable on AlmaLinux with PM2 + Nginx + SSL
 
 ## 🧰 Stack (latest stable)
@@ -286,10 +287,10 @@ pnpm lint
 
 ## 📈 Pages
 
-* `/` Dashboard — blended APY, per‑vault cards, earnings/day
+* `/` Dashboard — blended APY, per-vault cards, live projections, manual refresh
 * `/charts` — APY/TVL/earnings charts (1d/7d/30d ranges)
-* `/snapshots` — history table + CSV export/import
-* `/settings` — alert thresholds, timezone
+* `/snapshots` — history table + CSV export/import with filtering
+* `/settings` — alert thresholds, refresh worker guidance, timezone
 
 ## 🔔 Alerts
 
