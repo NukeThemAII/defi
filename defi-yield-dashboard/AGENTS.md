@@ -273,7 +273,6 @@ pnpm dev
 * Copy `.env.example` → `.env` and set:
 
   * `VAULTSFYI_API_KEY`, `ALCHEMY_API_KEY`, `DATABASE_URL`
-  * Optionally override `BASE_RPC_URL` (defaults to `https://mainnet.base.org`)
   * `THRESHOLD_APY_DELTA`, `THRESHOLD_TVL_DROP`, `TZ_DISPLAY`
   * `DEFAULT_WALLET=0x765B9b4D853427123e6eb1Af73Cb6c22D4dcfFd7`
 

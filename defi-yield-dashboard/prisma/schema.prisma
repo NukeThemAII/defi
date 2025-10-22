@@ -1,0 +1,35 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Platform {
+  id        String    @id @default(cuid())
+  key       String    @unique
+  name      String
+  vaultAddr String?
+  network   String
+  createdAt DateTime  @default(now())
+  snapshots Snapshot[]
+}
+
+model Snapshot {
+  id             String    @id @default(cuid())
+  platformId     String
+  platform       Platform  @relation(fields: [platformId], references: [id])
+  takenAt        DateTime
+  apy1d          Float?
+  apy7d          Float?
+  apy30d         Float?
+  tvlUsd         Float?
+  balanceUsd     Float?
+  earningsToDate Float?
+  createdAt      DateTime  @default(now())
+}
