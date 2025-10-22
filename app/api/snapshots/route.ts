@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { TRACKED_VAULTS, type VaultKey } from "@config/vaults";
-import { ensurePlatform } from "@/src/lib/platforms";
 import { prisma } from "@/src/lib/prisma";
+import { recordSnapshotForSummary } from "@/src/lib/snapshots";
 import { getVaultSummaryByKey } from "@/src/lib/vaults";
 
 const platformKeyEnum = z.enum(TRACKED_VAULTS.map((vault) => vault.key) as [VaultKey, ...VaultKey[]]);
@@ -66,27 +66,14 @@ export async function POST(request: NextRequest) {
     refresh: request.nextUrl.searchParams.get("refresh") === "true",
   });
 
-  const platform = await ensurePlatform({
-    key: summary.key,
-    name: summary.name,
-    network: summary.network,
-    vaultAddr: summary.address,
-  });
-
-  const snapshot = await prisma.snapshot.create({
-    data: {
-      platformId: platform.id,
-      takenAt: parsed.takenAt ?? new Date(),
-      apy1d: parsed.apy1d ?? summary.apy["1d"].total,
-      apy7d: parsed.apy7d ?? summary.apy["7d"].total,
-      apy30d: parsed.apy30d ?? summary.apy["30d"].total,
-      tvlUsd: parsed.tvlUsd ?? summary.tvlUsd,
-      balanceUsd: parsed.balanceUsd ?? null,
-      earningsToDate: parsed.earningsToDate ?? null,
-    },
-    include: {
-      platform: true,
-    },
+  const snapshot = await recordSnapshotForSummary(summary, {
+    takenAt: parsed.takenAt,
+    apy1d: parsed.apy1d,
+    apy7d: parsed.apy7d,
+    apy30d: parsed.apy30d,
+    tvlUsd: parsed.tvlUsd,
+    balanceUsd: parsed.balanceUsd,
+    earningsToDate: parsed.earningsToDate,
   });
 
   return NextResponse.json(

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { buildEarningsProjections, calculateBlendedApy, type ProjectionKey } from '@/src/lib/metrics';
 import { getVaultPosition, toUsdValue, type TokenAmount } from '@/src/lib/onchain';
+import { recordSnapshotForSummary } from '@/src/lib/snapshots';
 import { getTrackedVaultSummaries, type VaultSummary } from '@/src/lib/vaults';
 
 function serializeTokenAmount(amount: TokenAmount) {
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest) {
   const walletParam = searchParams.get('wallet') ?? process.env.DEFAULT_WALLET;
   const compoundWeekly = searchParams.get('compound') === 'weekly' || searchParams.get('weeklyCompounding') === 'true';
   const refresh = searchParams.get('refresh') === 'true';
+  const persistSnapshots = searchParams.get('persist') !== 'false';
 
   if (!walletParam) {
     return NextResponse.json(
@@ -130,6 +132,21 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    let snapshotsPersisted = 0;
+    if (persistSnapshots) {
+      const snapshotResults = await Promise.allSettled(
+        vaultsWithBalances.map((item) =>
+          recordSnapshotForSummary(item.summary, {
+            balanceUsd: item.balanceUsd,
+          }),
+        ),
+      );
+
+      snapshotsPersisted = snapshotResults.filter(
+        (result) => result.status === 'fulfilled',
+      ).length;
+    }
+
     return NextResponse.json({
       wallet: walletParam,
       compoundWeekly,
@@ -139,6 +156,7 @@ export async function GET(request: NextRequest) {
         projections: aggregatedProjections,
       },
       vaults: data,
+      snapshotsPersisted,
       fetchedAt: Date.now(),
     });
   } catch (error) {

@@ -13,7 +13,7 @@ interface EnsurePlatformOptions {
   vaultAddr?: string | null;
 }
 
-export async function ensurePlatform({
+export function ensurePlatform({
   key,
   name,
   network,
@@ -56,7 +56,7 @@ export async function ensureTrackedPlatforms(): Promise<Platform[]> {
   );
 }
 
-export async function getPlatformByKey(key: PlatformKey): Promise<Platform | null> {
+export function getPlatformByKey(key: PlatformKey): Promise<Platform | null> {
   return prisma.platform.findUnique({
     where: { key },
   });
@@ -75,7 +75,7 @@ export async function getPlatformOrThrow(key: PlatformKey): Promise<Platform> {
   return platform;
 }
 
-export async function listPlatforms(): Promise<Platform[]> {
+export function listPlatforms(): Promise<Platform[]> {
   return prisma.platform.findMany({
     orderBy: { createdAt: "asc" },
   });

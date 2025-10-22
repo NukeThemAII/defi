@@ -120,7 +120,7 @@ model Snapshot {
 | `/api/vault/[network]/[address]` | GET    | Detailed vault info + historical series             |
 | `/api/wallet/[address]`          | GET    | On‑chain wallet balances & vault share value        |
 | `/api/snapshots`                 | GET/POST | List snapshots or add manual snapshot (zod‑validated) |
-| `/api/summary`                   | GET    | Blended APY & earnings projections                  |
+| `/api/summary`                   | GET    | Blended APY & earnings projections (persists snapshots; disable with `?persist=false`) |
 | `/api/alerts`                    | GET    | Threshold alerts (computed server‑side)             |
 
 ---
@@ -311,6 +311,13 @@ pnpm lint
 ## 🧪 Testing
 
 * Vitest unit tests for calculations; smoke tests for `/api/vaults` & `/api/summary`
+* Commands: `pnpm test`, `pnpm lint`
+
+## ⏱ Refresh Jobs
+
+* Run the hourly snapshot worker locally with `pnpm refresh`
+* The worker refreshes Vaults.fyi data, captures Prisma snapshots, and respects `DEFAULT_WALLET` for balance projections
+* Production example (PM2): `pm2 start pnpm --name defi-refresh -- refresh`
 * Commands: `pnpm test`, `pnpm lint`
 
 ## 📝 Work Log

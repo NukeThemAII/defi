@@ -27,3 +27,10 @@
 **Findings / Decisions:** Vitest with V8 coverage keeps future CI simple and mirrors spec requirements. Maintaining tests alongside libs ensures regression checks for projection math.
 **Bugs / Blockers:** None.
 **Next Steps:** Integrate Prisma snapshot writes into `/api/summary`, stand up React Query hooks + UI pages, and schedule background refresh/alert job.
+
+## Session 2025-10-22 16:44
+**Goal:** Persist summary snapshots automatically and scaffold an hourly refresh worker.
+**Done:** `recordSnapshotForSummary` helper centralizes Prisma writes, `/api/summary` now persists snapshots by default (opt-out via `persist=false`), snapshots POST reuses helper, and hourly cron worker (`pnpm refresh`) captures summaries + wallet balances while leveraging `DEFAULT_WALLET`. Documented new workflow in README and .env, added node-cron/tsx/dotenv deps, and kept lint/tests green.
+**Findings / Decisions:** Default persistence ensures summary calls and the worker both enrich historical data with consistent logic; cron script designed for PM2/standalone usage.
+**Bugs / Blockers:** None.
+**Next Steps:** Expose refresh status in UI, wire React Query hooks for the new APIs, and plan alert delivery (email/webhook) pipeline.
