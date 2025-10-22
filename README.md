@@ -119,7 +119,7 @@ model Snapshot {
 | `/api/vaults`                    | GET    | Fetch vaults from Vaults.fyi (Gauntlet + Superlend) |
 | `/api/vault/[network]/[address]` | GET    | Detailed vault info + historical series             |
 | `/api/wallet/[address]`          | GET    | On‑chain wallet balances & vault share value        |
-| `/api/snapshots`                 | POST   | Add manual snapshot (zod‑validated)                 |
+| `/api/snapshots`                 | GET/POST | List snapshots or add manual snapshot (zod‑validated) |
 | `/api/summary`                   | GET    | Blended APY & earnings projections                  |
 | `/api/alerts`                    | GET    | Threshold alerts (computed server‑side)             |
 
@@ -266,6 +266,8 @@ pnpm prisma migrate dev --name init
 
 # 5) dev
 pnpm dev
+# optional sanity checks
+pnpm lint
 ```
 
 ## 🔧 Configuration

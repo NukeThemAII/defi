@@ -13,3 +13,10 @@
 **Findings / Decisions:** Vault lookups key off vault names via detailed list to avoid hardcoding addresses; caching keeps repeated API hits down. Wallet summaries assume USD price from Vaults.fyi asset feed; added converter helper for easier reuse.
 **Bugs / Blockers:** ESLint flat config still unhappy with plugin resolution—need to revisit config wiring after finishing core features.
 **Next Steps:** Finish lint config cleanup, expand API surface (`/api/vault/[network]/[address]`, snapshots), and begin integrating Prisma persistence + background jobs.
+
+## Session 2025-10-22 16:10
+**Goal:** Expand backend surface (detail, wallet, snapshots, alerts) and stabilize lint tooling.
+**Done:** Replaced legacy eslint-config-next wiring with flat config powered by `typescript-eslint` + `@next/eslint-plugin-next`, added Prisma helper (`src/lib/prisma.ts`) and platform sync utilities, implemented API routes for vault detail, wallet balances, snapshots (GET/POST), and alerts, and wired persistence via Prisma snapshots while syncing tracked platforms automatically. Added zod validation and aligned cached Vaults helpers to persist platform metadata. All lint checks now pass with stricter TypeScript rules.
+**Findings / Decisions:** Custom flat config avoids incompatibilities in Next 15 scaffold and keeps React/Next rules without legacy `name` property issues. Snapshots leverage current Vaults.fyi metrics when manual payload omits fields, ensuring consistent data capture.
+**Bugs / Blockers:** None; Prisma migrations already applied locally.
+**Next Steps:** Build `/api/summary` persistence hooks (historical storage), implement `/api/alerts` integration with scheduled refresh job, and start UI wiring for new endpoints.

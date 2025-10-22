@@ -54,18 +54,15 @@ export interface VaultPosition {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var __baseProvider: Provider | undefined;
-  // eslint-disable-next-line no-var
   var __tokenMetadataCache: Map<string, Promise<TokenMetadata>> | undefined;
-  // eslint-disable-next-line no-var
   var __vaultAssetCache: Map<string, Promise<string>> | undefined;
 }
 
 const metadataCache: Map<string, Promise<TokenMetadata>> =
-  globalThis.__tokenMetadataCache ?? new Map();
+  globalThis.__tokenMetadataCache ?? new Map<string, Promise<TokenMetadata>>();
 const assetCache: Map<string, Promise<string>> =
-  globalThis.__vaultAssetCache ?? new Map();
+  globalThis.__vaultAssetCache ?? new Map<string, Promise<string>>();
 
 if (!globalThis.__tokenMetadataCache) {
   globalThis.__tokenMetadataCache = metadataCache;
@@ -136,16 +133,25 @@ export async function getTokenMetadata(tokenAddress: string): Promise<TokenMetad
   const provider = getBaseProvider();
   const contract = new Contract(checksum, ERC20_ABI, provider);
 
-  const promise = Promise.all([
-    contract.decimals().catch(() => 18),
-    contract.symbol().catch(() => undefined),
-    contract.name().catch(() => undefined),
-  ]).then(([decimals, symbol, name]) => ({
-    address: checksum,
-    decimals: Number(decimals),
-    symbol,
-    name,
-  }));
+  const promise: Promise<TokenMetadata> = (async () => {
+    const decimalsRawUnknown: unknown = await contract.decimals().catch(() => 18);
+    const symbolRawUnknown: unknown = await contract.symbol().catch(() => undefined);
+    const nameRawUnknown: unknown = await contract.name().catch(() => undefined);
+
+    const decimalsNumber =
+      typeof decimalsRawUnknown === "number"
+        ? decimalsRawUnknown
+        : typeof decimalsRawUnknown === "bigint"
+          ? Number(decimalsRawUnknown)
+          : 18;
+
+    return {
+      address: checksum,
+      decimals: decimalsNumber,
+      symbol: typeof symbolRawUnknown === "string" ? symbolRawUnknown : undefined,
+      name: typeof nameRawUnknown === "string" ? nameRawUnknown : undefined,
+    } satisfies TokenMetadata;
+  })();
 
   metadataCache.set(checksum, promise);
   return promise;
@@ -233,4 +239,3 @@ export function toUsdValue(amount: TokenAmount, priceUsd?: number | null): numbe
 
   return amount.value * priceUsd;
 }
-

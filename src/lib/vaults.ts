@@ -1,6 +1,8 @@
 import { VaultsSdk } from '@vaultsfyi/sdk';
 import { BASE_NETWORK_NAME, TRACKED_VAULTS, type VaultDefinition, type VaultKey } from '@config/vaults';
 
+import { ensurePlatform } from './platforms';
+
 type VaultsListResponse = Awaited<ReturnType<VaultsSdk['getAllVaults']>>;
 type VaultListItem = VaultsListResponse['data'][number];
 type VaultDetailResponse = Awaited<ReturnType<VaultsSdk['getVault']>>;
@@ -16,16 +18,15 @@ const DEFAULT_SUMMARY_TTL = 60_000; // 1 minute
 const DEFAULT_HISTORY_TTL = 5 * 60_000; // 5 minutes
 
 declare global {
-  // eslint-disable-next-line no-var
   var __vaultsSdk: VaultsSdk | undefined;
-  // eslint-disable-next-line no-var
   var __vaultsCache: Map<string, CacheEntry<unknown>> | undefined;
-  // eslint-disable-next-line no-var
   var __vaultsPending: Map<string, Promise<unknown>> | undefined;
 }
 
-const cache: Map<string, CacheEntry<unknown>> = globalThis.__vaultsCache ?? new Map();
-const pending: Map<string, Promise<unknown>> = globalThis.__vaultsPending ?? new Map();
+const cache: Map<string, CacheEntry<unknown>> =
+  globalThis.__vaultsCache ?? new Map<string, CacheEntry<unknown>>();
+const pending: Map<string, Promise<unknown>> =
+  globalThis.__vaultsPending ?? new Map<string, Promise<unknown>>();
 
 if (!globalThis.__vaultsCache) {
   globalThis.__vaultsCache = cache;
@@ -262,7 +263,22 @@ function findVaultByDefinition(
 
 export async function getTrackedVaultSummaries(options?: { refresh?: boolean }): Promise<VaultSummary[]> {
   const { data } = await loadVaultList(BASE_NETWORK_NAME as VaultNetworkName, options);
-  return TRACKED_VAULTS.map((definition) => toSummary(definition, findVaultByDefinition(definition, data)));
+  const summaries = TRACKED_VAULTS.map((definition) =>
+    toSummary(definition, findVaultByDefinition(definition, data)),
+  );
+
+  await Promise.all(
+    summaries.map((summary) =>
+      ensurePlatform({
+        key: summary.key,
+        name: summary.name,
+        network: summary.network,
+        vaultAddr: summary.address,
+      }),
+    ),
+  );
+
+  return summaries;
 }
 
 export async function getVaultSummaryByKey(
@@ -275,7 +291,16 @@ export async function getVaultSummaryByKey(
   }
 
   const { data } = await loadVaultList(definition.network as VaultNetworkName, options);
-  return toSummary(definition, findVaultByDefinition(definition, data));
+  const summary = toSummary(definition, findVaultByDefinition(definition, data));
+
+  await ensurePlatform({
+    key: summary.key,
+    name: summary.name,
+    network: summary.network,
+    vaultAddr: summary.address,
+  });
+
+  return summary;
 }
 
 export async function getVaultDetail(
@@ -326,12 +351,12 @@ export async function getVaultHistory(
 
   const history = await withCache(
     `vaults:history:${summary.network}:${summary.address}:${options.apyInterval ?? '1day'}:${options.granularity ?? '1day'}:${options.page ?? 0}:${options.perPage ?? 200}`,
-    () =>
-      sdk.getVaultHistoricalData({
-        path: {
-          network: summary.network as VaultNetworkName,
-          vaultAddress: summary.address,
-        },
+        () =>
+          sdk.getVaultHistoricalData({
+            path: {
+              network: summary.network,
+              vaultAddress: summary.address,
+            },
         query: {
           apyInterval: options.apyInterval,
           granularity: options.granularity,

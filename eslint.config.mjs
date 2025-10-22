@@ -1,18 +1,68 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals.js";
-import nextTs from "eslint-config-next/typescript.js";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const eslintConfig = defineConfig([
-  nextVitals,
-  nextTs,
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
-]);
+import js from "@eslint/js";
+import nextPlugin from "@next/eslint-plugin-next";
+import globals from "globals";
+import tseslint from "typescript-eslint";
 
-export default eslintConfig;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const tsFilePatterns = ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"];
+
+const tsRecommended = tseslint.configs.recommendedTypeChecked.map((config) => ({
+  ...config,
+  files: config.files ?? tsFilePatterns,
+  languageOptions: {
+    ...config.languageOptions,
+    parserOptions: {
+      ...config.languageOptions?.parserOptions,
+      project: "./tsconfig.json",
+      tsconfigRootDir: __dirname,
+    },
+  },
+}));
+
+const nextConfig = {
+  plugins: {
+    "@next/next": nextPlugin,
+  },
+  rules: {
+    ...nextPlugin.configs["core-web-vitals"].rules,
+  },
+};
+
+export default [
+  {
+    ignores: [
+      ".next/**",
+      "out/**",
+      "build/**",
+      "next-env.d.ts",
+    ],
+  },
+  js.configs.recommended,
+  ...tsRecommended,
+  {
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+      parserOptions: {
+        project: "./tsconfig.json",
+        tsconfigRootDir: __dirname,
+      },
+    },
+    plugins: nextConfig.plugins,
+    rules: nextConfig.rules,
+    settings: {
+      next: {
+        rootDir: ["./"],
+      },
+      react: {
+        version: "detect",
+      },
+    },
+  },
+];
