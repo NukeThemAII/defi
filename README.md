@@ -311,6 +311,7 @@ pnpm lint
 ## 🧪 Testing
 
 * Vitest unit tests for calculations; smoke tests for `/api/vaults` & `/api/summary`
+* Commands: `pnpm test`, `pnpm lint`
 
 ## 📝 Work Log
 

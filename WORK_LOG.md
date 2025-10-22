@@ -20,3 +20,10 @@
 **Findings / Decisions:** Custom flat config avoids incompatibilities in Next 15 scaffold and keeps React/Next rules without legacy `name` property issues. Snapshots leverage current Vaults.fyi metrics when manual payload omits fields, ensuring consistent data capture.
 **Bugs / Blockers:** None; Prisma migrations already applied locally.
 **Next Steps:** Build `/api/summary` persistence hooks (historical storage), implement `/api/alerts` integration with scheduled refresh job, and start UI wiring for new endpoints.
+
+## Session 2025-10-22 16:32
+**Goal:** Add automated tests for calculation utilities and document new workflows.
+**Done:** Added Vitest config + npm scripts, implemented unit coverage for `src/lib/metrics.ts`, set `baseUrl` for path aliases, and updated README/testing docs. `pnpm test` + `pnpm lint` now clean.
+**Findings / Decisions:** Vitest with V8 coverage keeps future CI simple and mirrors spec requirements. Maintaining tests alongside libs ensures regression checks for projection math.
+**Bugs / Blockers:** None.
+**Next Steps:** Integrate Prisma snapshot writes into `/api/summary`, stand up React Query hooks + UI pages, and schedule background refresh/alert job.
