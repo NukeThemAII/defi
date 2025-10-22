@@ -41,3 +41,10 @@
 **Findings / Decisions:** Client pages default to server-provided `DEFAULT_WALLET`, with refresh toggles persisting snapshots automatically; summary refetches double as manual snapshot triggers. UI keeps dependencies light by leaning on shadcn-generated primitives.
 **Bugs / Blockers:** pnpm catalog access is flaky (EAI_AGAIN); scripts using `tsx` or lint/test binaries require existing installs. No functional blockers in app code.
 **Next Steps:** Build charts visualization (Recharts) using historical data, flesh out settings to control thresholds, and prepare production-ready hydration (loading states for Real-time data).
+
+## Session 2025-10-22 17:35
+**Goal:** Ship charts visualizations and polish settings/dashboard UX.
+**Done:** Added React Query-powered history hook (`useVaultHistories`) and Recharts-driven APY/TVL charts with granularity toggles, improved settings page to display live alert thresholds and env guidance, and refined dashboard refresh experience. README updated with new UI capabilities.
+**Findings / Decisions:** Recharts fits well for time-series overlays; history endpoint already supplies sufficient data. Summary refetch remains the single trigger for snapshot persistence.
+**Bugs / Blockers:** Unable to reinstall dependencies (pnpm EAI_AGAIN), so lint/tests not run this session—requires network to restore.
+**Next Steps:** Implement chart legends/earnings overlays, add threshold controls (server actions), and re-run lint/test once npm access stabilizes.
